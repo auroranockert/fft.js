@@ -1,4 +1,4 @@
-var FFT = (function() {
+void function (global) {
 	function factor(n) {
 		var p = 4, v = Math.floor(Math.sqrt(n)), buffer = []
 		
@@ -49,6 +49,38 @@ var FFT = (function() {
 		return state
 	}
 	
+	function allocateReal(n, inverse) {
+		if (n % 2 != 0) {
+			throw "n needs to be even for this optimization to work"
+		}
+		
+		n = Math.floor(n / 2)
+		
+		var state = {
+			n: n,
+			inverse: inverse,
+			
+			twiddle: new Float64Array(n),
+			
+			subfft: new FFT(n, inverse),
+			temp: new Float64Array(2 * (n * 1.5))
+		}
+		
+		var t = state.twiddle, pi2 = 2 * Math.PI
+		
+		for (var i = 0; i < n / 2; i++) {
+			if (inverse) {
+				var phase =  pi2 * ((i + 1.0) / n + 0.5)
+			} else {
+				var phase = -pi2 * ((i + 1.0) / n + 0.5)
+			}
+			
+			t[2 * i + 0] = Math.cos(phase)
+			t[2 * i + 1] = Math.sin(phase)
+		}
+		
+		return state
+	}
 	
 	function butterfly2(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
@@ -224,11 +256,11 @@ var FFT = (function() {
 		}
 	}
 	
-	function FFT (n, inverse) {
+	global.FFT = function (n, inverse) {
 		this.state = allocate(n, inverse)
 	}
 	
-	FFT.prototype.process = function(output, input, stride) {
+	global.FFT.prototype.process = function(output, input, stride) {
 		if (!stride) { stride = 1 }
 		
 		if (input == output) {
@@ -242,5 +274,75 @@ var FFT = (function() {
 		}
 	}
 	
-	return FFT
-}());
+	global.RealFFT = function (n, inverse) {
+		this.state = allocateReal(n, inverse)
+	}
+	
+	global.RealFFT.prototype.process = function(output, input, stride) {
+		var n = this.state.subfft.state.n, t = this.state.twiddle, temp = this.state.temp
+		
+		if (this.state.inverse) {
+			temp[0] = (input[0] + input[2 * n + 0]) / 2.0
+			temp[1] = (input[1] - input[2 * n + 0]) / 2.0
+		
+			for (var k = 1; k <= Math.floor(n / 2); k++) {
+				var t1_r = input[2 * k + 0] / 2.0
+				var t1_i = input[2 * k + 1] / 2.0
+			
+				var t2_r =  input[2 * (n - k) + 0] / 2.0
+				var t2_i = -input[2 * (n - k) + 1] / 2.0
+			
+				var t3_r = t1_r + t2_r
+				var t3_i = t1_i + t2_i
+			
+				var t4_r = t1_r - t2_r
+				var t4_i = t1_i - t2_i
+			
+				var t5_r = t4_r * t[2 * (k - 1) + 0] - t4_i * t[2 * (k - 1) + 1]
+				var t5_i = t4_r * t[2 * (k - 1) + 1] + t4_i * t[2 * (k - 1) + 0]
+			
+				temp[2 * k + 0] = t3_r + t5_r
+				temp[2 * k + 1] = t3_i + t5_i
+			
+				temp[2 * (n - k) + 0] = t3_r - t5_r
+				temp[2 * (n - k) + 1] = t3_i + t5_i
+			}
+			
+			this.state.subfft.process(output, temp)
+		} else {
+			this.state.subfft.process(temp, input)
+			
+			var t1_r = temp[0] / 2.0
+			var t1_i = temp[1] / 2.0
+			
+			output[0] = t1_r + t1_i
+			output[1] = 0.0
+			
+			output[2 * n + 0] = t1_r - t1_i
+			output[2 * n + 1] = 0.0
+			
+			for (var k = 1; k <= Math.ceil(n / 2); k++) {
+				var t2_r = temp[2 * k + 0] / 2.0
+				var t2_i = temp[2 * k + 1] / 2.0
+				
+				var t3_r =  temp[2 * (n - k) + 0] / 2.0
+				var t3_i = -temp[2 * (n - k) + 1] / 2.0
+				
+				var t4_r = t2_r + t3_r
+				var t4_i = t2_r + t3_i
+				
+				var t5_r = t2_r - t3_r
+				var t5_i = t2_r - t3_i
+				
+				var t6_r = t5_r * t[2 * (k - 1) + 0] - t5_i * t[2 * (k - 1) + 1]
+				var t6_i = t5_r * t[2 * (k - 1) + 1] + t5_i * t[2 * (k - 1) + 0]
+				
+				output[2 * k + 0] = (t4_r + t6_r) / 2.0
+				output[2 * k + 1] = (t4_i + t6_i) / 2.0
+				
+				output[2 * (n - k) + 0] = (t4_r - t6_r) / 2.0
+				output[2 * (n - k) + 1] = (t6_i - t4_i) / 2.0
+			}
+		}
+	}
+}(this)
