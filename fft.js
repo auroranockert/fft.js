@@ -63,7 +63,7 @@ void function (global) {
 			twiddle: new Float64Array(n),
 			
 			subfft: new FFT(n, inverse),
-			temp: new Float64Array(2 * (n * 1.5))
+			temp: new Float64Array(3 * n)
 		}
 		
 		var t = state.twiddle, pi2 = 2 * Math.PI
@@ -283,9 +283,9 @@ void function (global) {
 		
 		if (this.state.inverse) {
 			temp[0] = (input[0] + input[2 * n + 0]) / 2.0
-			temp[1] = (input[1] - input[2 * n + 0]) / 2.0
+			temp[1] = (input[0] - input[2 * n + 0]) / 2.0
 		
-			for (var k = 1; k <= Math.floor(n / 2); k++) {
+			for (var k = 1; k <= n / 2; k++) {
 				var t1_r = input[2 * k + 0] / 2.0
 				var t1_i = input[2 * k + 1] / 2.0
 			
@@ -304,8 +304,8 @@ void function (global) {
 				temp[2 * k + 0] = t3_r + t5_r
 				temp[2 * k + 1] = t3_i + t5_i
 			
-				temp[2 * (n - k) + 0] = t3_r - t5_r
-				temp[2 * (n - k) + 1] = t3_i + t5_i
+				temp[2 * (n - k) + 0] =  (t3_r - t5_r)
+				temp[2 * (n - k) + 1] = -(t3_i - t5_i)
 			}
 			
 			this.state.subfft.process(output, temp)
@@ -321,7 +321,7 @@ void function (global) {
 			output[2 * n + 0] = t1_r - t1_i
 			output[2 * n + 1] = 0.0
 			
-			for (var k = 1; k <= Math.ceil(n / 2); k++) {
+			for (var k = 1; k <= n / 2; k++) {
 				var t2_r = temp[2 * k + 0] / 2.0
 				var t2_i = temp[2 * k + 1] / 2.0
 				
