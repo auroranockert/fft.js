@@ -1,4 +1,4 @@
-void function (global) {
+var FFT = function (global) {
 	function factor(n) {
 		var p = 4, v = Math.floor(Math.sqrt(n)), buffer = []
 		
@@ -256,11 +256,11 @@ void function (global) {
 		}
 	}
 	
-	global.FFT = function (n, inverse) {
+	var FFT = function (n, inverse) {
 		this.state = allocate(n, inverse)
 	}
 	
-	global.FFT.prototype.process = function(output, input, stride) {
+	FFT.prototype.process = function(output, input, stride) {
 		if (!stride) { stride = 1 }
 		
 		if (input == output) {
@@ -274,11 +274,11 @@ void function (global) {
 		}
 	}
 	
-	global.RealFFT = function (n, inverse) {
+	var RealFFT = function (n, inverse) {
 		this.state = allocateReal(n, inverse)
 	}
 	
-	global.RealFFT.prototype.process = function(output, input, stride) {
+	RealFFT.prototype.process = function(output, input, stride) {
 		var n = this.state.subfft.state.n, t = this.state.twiddle, temp = this.state.temp
 		
 		if (this.state.inverse) {
@@ -345,4 +345,9 @@ void function (global) {
 			}
 		}
 	}
-}(this)
+
+	FFT.RealFFT = FFT.RFFT = RealFFT;
+	FFT.FFT = FFT;
+
+	return FFT;
+}()
