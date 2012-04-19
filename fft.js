@@ -1,4 +1,6 @@
 var FFT = function (global) {
+	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
+	
 	function factor(n) {
 		var p = 4, v = Math.floor(Math.sqrt(n)), buffer = []
 		
