@@ -1,0 +1,23 @@
+{
+	"name":		"fft",
+	"authors":	["Jens Nockert", "Jussi Kalliokoski"],
+	"version":	"0.1.0",
+	"description":	"A Fast Fourier Transform library for JS.",
+	"repository":	{
+		"type":		"git",
+		"url":		"http://github.com/JensNockert/fft.js"
+	},
+	"engines":	{
+		"node":		">=0.6.0-0"
+	},
+	"licenses":	[{
+		"type":		"FreeBSD"
+	}],
+	"bugs":		{
+		"url":		"http://github.com/JensNockert/fft.js/issues"
+	},
+	"scripts":	{
+		"preinstall":	"make"
+	},
+	"main":		"./node-fft.js"
+}
