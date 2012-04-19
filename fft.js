@@ -82,15 +82,17 @@ var FFT = function (global) {
 		return state
 	}
 	
+	var rsqrt2 = 1.0 / Math.sqrt(2)
+	
 	function butterfly2(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = output[2 * (outputOffset + 0 + i) + 0] / 2.0
-			var v1_i = output[2 * (outputOffset + 0 + i) + 1] / 2.0
+			var v1_r = output[2 * (outputOffset + 0 + i) + 0] * rsqrt2
+			var v1_i = output[2 * (outputOffset + 0 + i) + 1] * rsqrt2
 			
-			var v2_r = output[2 * (outputOffset + m + i) + 0] / 2.0
-			var v2_i = output[2 * (outputOffset + m + i) + 1] / 2.0
+			var v2_r = output[2 * (outputOffset + m + i) + 0] * rsqrt2
+			var v2_i = output[2 * (outputOffset + m + i) + 1] * rsqrt2
 			
 			var t_r = v2_r * t[2 * fStride * i + 0] - v2_i * t[2 * fStride * i + 1]
 			var t_i = v2_r * t[2 * fStride * i + 1] + v2_i * t[2 * fStride * i + 0]
@@ -103,20 +105,22 @@ var FFT = function (global) {
 		}
 	}
 	
+	var rsqrt3 = 1.0 / Math.sqrt(3)
+	
 	function butterfly3(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
 		
 		var e1_i = t[2 * fStride * m + 1]
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = output[2 * (outputOffset + 0 * m + i) + 0] / 3.0
-			var v1_i = output[2 * (outputOffset + 0 * m + i) + 1] / 3.0
+			var v1_r = output[2 * (outputOffset + 0 * m + i) + 0] * rsqrt3
+			var v1_i = output[2 * (outputOffset + 0 * m + i) + 1] * rsqrt3
 			
-			var v2_r = output[2 * (outputOffset + 1 * m + i) + 0] / 3.0
-			var v2_i = output[2 * (outputOffset + 1 * m + i) + 1] / 3.0
+			var v2_r = output[2 * (outputOffset + 1 * m + i) + 0] * rsqrt3
+			var v2_i = output[2 * (outputOffset + 1 * m + i) + 1] * rsqrt3
 			
-			var v3_r = output[2 * (outputOffset + 2 * m + i) + 0] / 3.0
-			var v3_i = output[2 * (outputOffset + 2 * m + i) + 1] / 3.0
+			var v3_r = output[2 * (outputOffset + 2 * m + i) + 0] * rsqrt3
+			var v3_i = output[2 * (outputOffset + 2 * m + i) + 1] * rsqrt3
 			
 			var t1_r = v2_r * t[2 * (1 * fStride) * i + 0] - v2_i * t[2 * (1 * fStride) * i + 1]
 			var t1_i = v2_r * t[2 * (1 * fStride) * i + 1] + v2_i * t[2 * (1 * fStride) * i + 0]
@@ -144,21 +148,23 @@ var FFT = function (global) {
 		}
 	}
 	
+	var rsqrt4 = 0.5
+	
 	function butterfly4(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = output[2 * (outputOffset + 0 * m + i) + 0] / 4.0
-			var v1_i = output[2 * (outputOffset + 0 * m + i) + 1] / 4.0
+			var v1_r = output[2 * (outputOffset + 0 * m + i) + 0] * rsqrt4
+			var v1_i = output[2 * (outputOffset + 0 * m + i) + 1] * rsqrt4
 			
-			var v2_r = output[2 * (outputOffset + 1 * m + i) + 0] / 4.0
-			var v2_i = output[2 * (outputOffset + 1 * m + i) + 1] / 4.0
+			var v2_r = output[2 * (outputOffset + 1 * m + i) + 0] * rsqrt4
+			var v2_i = output[2 * (outputOffset + 1 * m + i) + 1] * rsqrt4
 			
-			var v3_r = output[2 * (outputOffset + 2 * m + i) + 0] / 4.0
-			var v3_i = output[2 * (outputOffset + 2 * m + i) + 1] / 4.0
+			var v3_r = output[2 * (outputOffset + 2 * m + i) + 0] * rsqrt4
+			var v3_i = output[2 * (outputOffset + 2 * m + i) + 1] * rsqrt4
 			
-			var v4_r = output[2 * (outputOffset + 3 * m + i) + 0] / 4.0
-			var v4_i = output[2 * (outputOffset + 3 * m + i) + 1] / 4.0
+			var v4_r = output[2 * (outputOffset + 3 * m + i) + 0] * rsqrt4
+			var v4_i = output[2 * (outputOffset + 3 * m + i) + 1] * rsqrt4
 			
 			var t1_r = v2_r * t[2 * (1 * fStride) * i + 0] - v2_i * t[2 * (1 * fStride) * i + 1]
 			var t1_i = v2_r * t[2 * (1 * fStride) * i + 1] + v2_i * t[2 * (1 * fStride) * i + 0]
@@ -282,15 +288,15 @@ var FFT = function (global) {
 		var n = this.state.subfft.state.n, t = this.state.twiddle, temp = this.state.temp
 		
 		if (this.state.inverse) {
-			temp[0] = (input[0] + input[2 * n + 0]) / 2.0
-			temp[1] = (input[0] - input[2 * n + 0]) / 2.0
+			temp[0] = (input[0] + input[2 * n + 0]) * rsqrt2
+			temp[1] = (input[0] - input[2 * n + 0]) * rsqrt2
 		
 			for (var k = 1; k <= n / 2; k++) {
-				var t1_r = input[2 * k + 0] / 2.0
-				var t1_i = input[2 * k + 1] / 2.0
+				var t1_r = input[2 * k + 0] * rsqrt2
+				var t1_i = input[2 * k + 1] * rsqrt2
 			
-				var t2_r =  input[2 * (n - k) + 0] / 2.0
-				var t2_i = -input[2 * (n - k) + 1] / 2.0
+				var t2_r =  input[2 * (n - k) + 0] * rsqrt2
+				var t2_i = -input[2 * (n - k) + 1] * rsqrt2
 			
 				var t3_r = t1_r + t2_r
 				var t3_i = t1_i + t2_i
@@ -312,8 +318,8 @@ var FFT = function (global) {
 		} else {
 			this.state.subfft.process(temp, input)
 			
-			var t1_r = temp[0] / 2.0
-			var t1_i = temp[1] / 2.0
+			var t1_r = temp[0] * rsqrt2
+			var t1_i = temp[1] * rsqrt2
 			
 			output[0] = t1_r + t1_i
 			output[1] = 0.0
@@ -322,11 +328,11 @@ var FFT = function (global) {
 			output[2 * n + 1] = 0.0
 			
 			for (var k = 1; k <= n / 2; k++) {
-				var t2_r = temp[2 * k + 0] / 2.0
-				var t2_i = temp[2 * k + 1] / 2.0
+				var t2_r = temp[2 * k + 0] * rsqrt2
+				var t2_i = temp[2 * k + 1] * rsqrt2
 				
-				var t3_r =  temp[2 * (n - k) + 0] / 2.0
-				var t3_i = -temp[2 * (n - k) + 1] / 2.0
+				var t3_r =  temp[2 * (n - k) + 0] * rsqrt2
+				var t3_i = -temp[2 * (n - k) + 1] * rsqrt2
 				
 				var t4_r = t2_r + t3_r
 				var t4_i = t2_r + t3_i
