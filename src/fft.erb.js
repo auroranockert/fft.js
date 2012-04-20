@@ -42,31 +42,6 @@ end
 		return buffer
 	}
 	
-	function allocate(n, inverse) {
-		var state = {
-			n: n,
-			inverse: inverse,
-			
-			factors: factor(n),
-			twiddle: new Float64Array(2 * n)
-		}
-		
-		var t = state.twiddle, pi2 = 2 * Math.PI
-		
-		for (var i = 0; i < n; i++) {
-			if (inverse) {
-				var phase =  pi2 * i / n
-			} else {
-				var phase = -pi2 * i / n
-			}
-			
-			<%= real('t', 'i') %> = Math.cos(phase)
-			<%= imag('t', 'i') %> = Math.sin(phase)
-		}
-		
-		return state
-	}
-	
 	var rsqrt2 = 1.0 / Math.sqrt(2)
 	
 	function butterfly2(output, outputOffset, fStride, state, m) {
@@ -252,7 +227,38 @@ end
 	}
 	
 	var dft = function (n, inverse) {
-		this.state = allocate(n, inverse)
+		var n = ~~n, inverse = !!inverse
+		
+		if (n < 1) {
+			throw new RangeError("n is outside range, should be positive integer, was `" + n + "'")
+		}
+		
+		var state = {
+			n: n,
+			inverse: inverse,
+			
+			factors: null,
+			twiddle: new Float64Array(2 * n)
+		}
+		
+		var t = state.twiddle, pi2 = 2 * Math.PI
+		
+		for (var i = 0; i < n; i++) {
+			if (inverse) {
+				var phase =  pi2 * i / n
+			} else {
+				var phase = -pi2 * i / n
+			}
+			
+			<%= real('t', 'i') %> = Math.cos(phase)
+			<%= imag('t', 'i') %> = Math.sin(phase)
+		}
+		
+		factor(state)
+		
+		this.state = state
+		
+		return
 	}
 	
 	dft.prototype.process = function(output, input, stride) {
