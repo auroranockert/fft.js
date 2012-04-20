@@ -326,36 +326,33 @@ var FFT = function (global) {
 		} else {
 			this.state.subfft.process(temp, input)
 			
-			var t1_r = temp[2 * (0)] * rsqrt2
-			var t1_i = temp[2 * (0) + 1] * rsqrt2
-			
-			output[2 * (0)] = t1_r + t1_i
+			output[2 * (0)] = (temp[2 * (0)] + temp[2 * (0) + 1]) * rsqrt2
 			output[2 * (0) + 1] = 0.0
 			
-			output[2 * (n)] = t1_r - t1_i
+			output[2 * (n)] = (temp[2 * (0)] - temp[2 * (0) + 1]) * rsqrt2
 			output[2 * (n) + 1] = 0.0
 			
 			for (var k = 1; k <= n / 2; k++) {
-				var t2_r = temp[2 * (k)] * rsqrt2
-				var t2_i = temp[2 * (k) + 1] * rsqrt2
+				var t1_r = temp[2 * (k)] / 2.0
+				var t1_i = temp[2 * (k) + 1] / 2.0
 				
-				var t3_r =  temp[2 * (n - k)] * rsqrt2
-				var t3_i = -temp[2 * (n - k) + 1] * rsqrt2
+				var t2_r =  temp[2 * (n - k)] / 2.0
+				var t2_i = -temp[2 * (n - k) + 1] / 2.0
 				
-				var t4_r = t2_r + t3_r
-				var t4_i = t2_r + t3_i
+				var t3_r = t1_r + t2_r
+				var t3_i = t1_r + t2_i
 				
-				var t5_r = t2_r - t3_r
-				var t5_i = t2_r - t3_i
+				var t4_r = t1_r - t2_r
+				var t4_i = t1_r - t2_i
 				
-				var t6_r = t5_r * t[2 * (k - 1)] - t5_i * t[2 * (k - 1) + 1]
-				var t6_i = t5_r * t[2 * (k - 1) + 1] + t5_i * t[2 * (k - 1)]
+				var t5_r = t4_r * t[2 * (k - 1)] - t4_i * t[2 * (k - 1) + 1]
+				var t5_i = t4_r * t[2 * (k - 1) + 1] + t4_i * t[2 * (k - 1)]
 				
-				output[2 * (k)] = (t4_r + t6_r) / 2.0
-				output[2 * (k) + 1] = (t4_i + t6_i) / 2.0
+				output[2 * (k)] = (t3_r + t5_r) * rsqrt2
+				output[2 * (k) + 1] = (t3_i + t5_i) * rsqrt2
 				
-				output[2 * (n - k)] = (t4_r - t6_r) / 2.0
-				output[2 * (n - k) + 1] = (t6_i - t4_i) / 2.0
+				output[2 * (n - k)] = (t3_r - t5_r) * rsqrt2
+				output[2 * (n - k) + 1] = (t5_i - t3_i) * rsqrt2
 			}
 		}
 	}

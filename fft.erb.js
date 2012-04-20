@@ -342,36 +342,33 @@ var FFT = function (global) {
 		} else {
 			this.state.subfft.process(temp, input)
 			
-			var t1_r = <%= real('temp', '0') %> * rsqrt2
-			var t1_i = <%= imag('temp', '0') %> * rsqrt2
-			
-			<%= real('output', '0') %> = t1_r + t1_i
+			<%= real('output', '0') %> = (<%= real('temp', '0') %> + <%= imag('temp', '0') %>) * rsqrt2
 			<%= imag('output', '0') %> = 0.0
 			
-			<%= real('output', 'n') %> = t1_r - t1_i
+			<%= real('output', 'n') %> = (<%= real('temp', '0') %> - <%= imag('temp', '0') %>) * rsqrt2
 			<%= imag('output', 'n') %> = 0.0
 			
 			for (var k = 1; k <= n / 2; k++) {
-				var t2_r = <%= real('temp', 'k') %> * rsqrt2
-				var t2_i = <%= imag('temp', 'k') %> * rsqrt2
+				var t1_r = <%= real('temp', 'k') %> / 2.0
+				var t1_i = <%= imag('temp', 'k') %> / 2.0
 				
-				var t3_r =  <%= real('temp', 'n - k') %> * rsqrt2
-				var t3_i = -<%= imag('temp', 'n - k') %> * rsqrt2
+				var t2_r =  <%= real('temp', 'n - k') %> / 2.0
+				var t2_i = -<%= imag('temp', 'n - k') %> / 2.0
 				
-				var t4_r = t2_r + t3_r
-				var t4_i = t2_r + t3_i
+				var t3_r = t1_r + t2_r
+				var t3_i = t1_r + t2_i
 				
-				var t5_r = t2_r - t3_r
-				var t5_i = t2_r - t3_i
+				var t4_r = t1_r - t2_r
+				var t4_i = t1_r - t2_i
 				
-				var t6_r = t5_r * <%= real('t', 'k - 1') %> - t5_i * <%= imag('t', 'k - 1') %>
-				var t6_i = t5_r * <%= imag('t', 'k - 1') %> + t5_i * <%= real('t', 'k - 1') %>
+				var t5_r = t4_r * <%= real('t', 'k - 1') %> - t4_i * <%= imag('t', 'k - 1') %>
+				var t5_i = t4_r * <%= imag('t', 'k - 1') %> + t4_i * <%= real('t', 'k - 1') %>
 				
-				<%= real('output', 'k') %> = (t4_r + t6_r) / 2.0
-				<%= imag('output', 'k') %> = (t4_i + t6_i) / 2.0
+				<%= real('output', 'k') %> = (t3_r + t5_r) * rsqrt2
+				<%= imag('output', 'k') %> = (t3_i + t5_i) * rsqrt2
 				
-				<%= real('output', 'n - k') %> = (t4_r - t6_r) / 2.0
-				<%= imag('output', 'n - k') %> = (t6_i - t4_i) / 2.0
+				<%= real('output', 'n - k') %> = (t3_r - t5_r) * rsqrt2
+				<%= imag('output', 'n - k') %> = (t5_i - t3_i) * rsqrt2
 			}
 		}
 	}
