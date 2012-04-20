@@ -253,11 +253,11 @@ var FFT = function () {
 		}
 	}
 	
-	var fft = function (n, inverse) {
+	var dft = function (n, inverse) {
 		this.state = allocate(n, inverse)
 	}
 	
-	fft.prototype.process = function(output, input, stride) {
+	dft.prototype.process = function(output, input, stride) {
 		if (!stride) { stride = 1 }
 		
 		if (input == output) {
@@ -273,7 +273,7 @@ var FFT = function () {
 	
 	var FFT = {}
 	
-	FFT.fft = fft
+	FFT.dft = dft
 	
 	return FFT
 }()
