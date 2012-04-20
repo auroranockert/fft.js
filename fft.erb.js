@@ -316,9 +316,6 @@ var FFT = function (global) {
 			<%= imag('temp', '0') %> = (<%= real('input', '0') %> - <%= real('input', 'n') %>) * rsqrt2
 		
 			for (var k = 1; k <= n / 2; k++) {
-				<%= real('input', 'k') %>
-				<%= imag('input', 'k') %>
-				
 				var t1_r = <%= real('input', 'k') %> * rsqrt2
 				var t1_i = <%= imag('input', 'k') %> * rsqrt2
 			
@@ -367,8 +364,8 @@ var FFT = function (global) {
 				var t5_r = t2_r - t3_r
 				var t5_i = t2_r - t3_i
 				
-				var t6_r = t5_r * <%= real('t', 'k -1') %> - t5_i * <%= imag('t', 'k -1') %>
-				var t6_i = t5_r * <%= imag('t', 'k -1') %> + t5_i * <%= real('t', 'k -1') %>
+				var t6_r = t5_r * <%= real('t', 'k - 1') %> - t5_i * <%= imag('t', 'k - 1') %>
+				var t6_i = t5_r * <%= imag('t', 'k - 1') %> + t5_i * <%= real('t', 'k - 1') %>
 				
 				<%= real('output', 'k') %> = (t4_r + t6_r) / 2.0
 				<%= imag('output', 'k') %> = (t4_i + t6_i) / 2.0

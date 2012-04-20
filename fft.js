@@ -300,9 +300,6 @@ var FFT = function (global) {
 			temp[2 * (0) + 1] = (input[2 * (0)] - input[2 * (n)]) * rsqrt2
 		
 			for (var k = 1; k <= n / 2; k++) {
-				input[2 * (k)]
-				input[2 * (k) + 1]
-				
 				var t1_r = input[2 * (k)] * rsqrt2
 				var t1_i = input[2 * (k) + 1] * rsqrt2
 			
@@ -351,8 +348,8 @@ var FFT = function (global) {
 				var t5_r = t2_r - t3_r
 				var t5_i = t2_r - t3_i
 				
-				var t6_r = t5_r * t[2 * (k -1)] - t5_i * t[2 * (k -1) + 1]
-				var t6_i = t5_r * t[2 * (k -1) + 1] + t5_i * t[2 * (k -1)]
+				var t6_r = t5_r * t[2 * (k - 1)] - t5_i * t[2 * (k - 1) + 1]
+				var t6_i = t5_r * t[2 * (k - 1) + 1] + t5_i * t[2 * (k - 1)]
 				
 				output[2 * (k)] = (t4_r + t6_r) / 2.0
 				output[2 * (k) + 1] = (t4_i + t6_i) / 2.0
