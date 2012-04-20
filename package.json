@@ -17,7 +17,7 @@
 		"url":		"http://github.com/JensNockert/fft.js/issues"
 	},
 	"scripts":	{
-		"preinstall":	"make"
+		"preinstall":	"make node"
 	},
 	"main":		"./node-fft.js"
 }
