@@ -14,9 +14,7 @@ def imag(x, i, stride = nil)
 		"#{x}[2 * (#{i}) + 1]"
 	end
 end
- %>
-
-var FFT = function () {
+ %>var FFT = function () {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
 	
 	function factor(n) {
