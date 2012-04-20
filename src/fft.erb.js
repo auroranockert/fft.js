@@ -17,8 +17,8 @@ end
  %>var FFT = function () {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
 	
-	function factor(n) {
-		var p = 4, v = Math.floor(Math.sqrt(n)), buffer = []
+	function factor(state) {
+		var n = state.n, p = 4, v = Math.floor(Math.sqrt(n)), buffer = state.factors
 		
 		while (n > 1) {
 			while (n % p) {
@@ -237,8 +237,9 @@ end
 			n: n,
 			inverse: inverse,
 			
-			factors: null,
-			twiddle: new Float64Array(2 * n)
+			factors: [],
+			twiddle: new Float64Array(2 * n),
+			scratch: new Float64Array(2 * n)
 		}
 		
 		var t = state.twiddle, pi2 = 2 * Math.PI
