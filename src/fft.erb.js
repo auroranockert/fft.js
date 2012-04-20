@@ -274,6 +274,6 @@ var FFT = function () {
 	var FFT = {}
 	
 	FFT.fft = fft
-
+	
 	return FFT
 }()
