@@ -1,2 +1,2 @@
 .DS_STORE
-node-fft.js
+lib/node-fft.js

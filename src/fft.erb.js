@@ -16,7 +16,7 @@ def imag(x, i, stride = nil)
 end
  %>
 
-var FFT = function (global) {
+var FFT = function () {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
 	
 	function factor(n) {
@@ -60,39 +60,6 @@ var FFT = function (global) {
 				var phase =  pi2 * i / n
 			} else {
 				var phase = -pi2 * i / n
-			}
-			
-			<%= real('t', 'i') %> = Math.cos(phase)
-			<%= imag('t', 'i') %> = Math.sin(phase)
-		}
-		
-		return state
-	}
-	
-	function allocateReal(n, inverse) {
-		if (n % 2 != 0) {
-			throw "n needs to be even for this optimization to work"
-		}
-		
-		n = Math.floor(n / 2)
-		
-		var state = {
-			n: n,
-			inverse: inverse,
-			
-			twiddle: new Float64Array(n),
-			
-			subfft: new FFT(n, inverse),
-			temp: new Float64Array(3 * n)
-		}
-		
-		var t = state.twiddle, pi2 = 2 * Math.PI
-		
-		for (var i = 0; i < n / 2; i++) {
-			if (inverse) {
-				var phase =  pi2 * ((i + 1.0) / n + 0.5)
-			} else {
-				var phase = -pi2 * ((i + 1.0) / n + 0.5)
 			}
 			
 			<%= real('t', 'i') %> = Math.cos(phase)
@@ -286,11 +253,11 @@ var FFT = function (global) {
 		}
 	}
 	
-	var FFT = function (n, inverse) {
+	var fft = function (n, inverse) {
 		this.state = allocate(n, inverse)
 	}
 	
-	FFT.prototype.process = function(output, input, stride) {
+	fft.prototype.process = function(output, input, stride) {
 		if (!stride) { stride = 1 }
 		
 		if (input == output) {
@@ -304,77 +271,9 @@ var FFT = function (global) {
 		}
 	}
 	
-	var RealFFT = function (n, inverse) {
-		this.state = allocateReal(n, inverse)
-	}
+	var FFT = {}
 	
-	RealFFT.prototype.process = function(output, input, stride) {
-		var n = this.state.subfft.state.n, t = this.state.twiddle, temp = this.state.temp
-		
-		if (this.state.inverse) {
-			<%= real('temp', '0') %> = (<%= real('input', '0') %> + <%= real('input', 'n') %>) * rsqrt2
-			<%= imag('temp', '0') %> = (<%= real('input', '0') %> - <%= real('input', 'n') %>) * rsqrt2
-		
-			for (var k = 1; k <= n / 2; k++) {
-				var t1_r = <%= real('input', 'k') %> * rsqrt2
-				var t1_i = <%= imag('input', 'k') %> * rsqrt2
-			
-				var t2_r =  <%= real('input', 'n - k') %> * rsqrt2
-				var t2_i = -<%= imag('input', 'n - k') %> * rsqrt2
-			
-				var t3_r = t1_r + t2_r
-				var t3_i = t1_i + t2_i
-			
-				var t4_r = t1_r - t2_r
-				var t4_i = t1_i - t2_i
-			
-				var t5_r = t4_r * <%= real('t', 'k - 1') %> - t4_i * <%= imag('t', 'k - 1') %>
-				var t5_i = t4_r * <%= imag('t', 'k - 1') %> + t4_i * <%= real('t', 'k - 1') %>
-			
-				<%= real('temp', 'k') %> = t3_r + t5_r
-				<%= imag('temp', 'k') %> = t3_i + t5_i
-			
-				<%= real('temp', 'n - k') %> =  (t3_r - t5_r)
-				<%= imag('temp', 'n - k') %> = -(t3_i - t5_i)
-			}
-			
-			this.state.subfft.process(output, temp)
-		} else {
-			this.state.subfft.process(temp, input)
-			
-			<%= real('output', '0') %> = (<%= real('temp', '0') %> + <%= imag('temp', '0') %>) * rsqrt2
-			<%= imag('output', '0') %> = 0.0
-			
-			<%= real('output', 'n') %> = (<%= real('temp', '0') %> - <%= imag('temp', '0') %>) * rsqrt2
-			<%= imag('output', 'n') %> = 0.0
-			
-			for (var k = 1; k <= n / 2; k++) {
-				var t1_r = <%= real('temp', 'k') %> / 2.0
-				var t1_i = <%= imag('temp', 'k') %> / 2.0
-				
-				var t2_r =  <%= real('temp', 'n - k') %> / 2.0
-				var t2_i = -<%= imag('temp', 'n - k') %> / 2.0
-				
-				var t3_r = t1_r + t2_r
-				var t3_i = t1_r + t2_i
-				
-				var t4_r = t1_r - t2_r
-				var t4_i = t1_r - t2_i
-				
-				var t5_r = t4_r * <%= real('t', 'k - 1') %> - t4_i * <%= imag('t', 'k - 1') %>
-				var t5_i = t4_r * <%= imag('t', 'k - 1') %> + t4_i * <%= real('t', 'k - 1') %>
-				
-				<%= real('output', 'k') %> = (t3_r + t5_r) * rsqrt2
-				<%= imag('output', 'k') %> = (t3_i + t5_i) * rsqrt2
-				
-				<%= real('output', 'n - k') %> = (t3_r - t5_r) * rsqrt2
-				<%= imag('output', 'n - k') %> = (t5_i - t3_i) * rsqrt2
-			}
-		}
-	}
+	FFT.fft = fft
 
-	FFT.RealFFT = FFT.RFFT = RealFFT;
-	FFT.FFT = FFT;
-
-	return FFT;
+	return FFT
 }()

@@ -1,12 +1,12 @@
-TARGETS := fft.js node-fft.js
+TARGETS := lib/fft.js lib/node-fft.js
 
 all: $(TARGETS)
-node: node-fft.js
+node: lib/node-fft.js
 
-fft.js: fft.erb.js
+lib/fft.js: src/fft.erb.js
 	erb $^ > $@
 
-node-fft.js: fft.js
+lib/node-fft.js: lib/fft.js
 	cp $^ $@
 	echo "module.exports=FFT;" >> $@
 

@@ -19,5 +19,5 @@
 	"scripts":	{
 		"preinstall":	"make node"
 	},
-	"main":		"./node-fft.js"
+	"main":		"./lib/node-fft.js"
 }
