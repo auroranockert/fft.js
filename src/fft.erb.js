@@ -271,9 +271,7 @@ var FFT = function () {
 		}
 	}
 	
-	var FFT = {}
-	
-	FFT.dft = dft
-	
-	return FFT
+	return {
+		dft: dft
+	}
 }()
