@@ -14,103 +14,86 @@ def imag(x, i, stride = nil)
 		"#{x}[2 * (#{i}) + 1]"
 	end
 end
+
+def load(value, x, i, stride = nil)
+	"var #{value}_r = #{real(x, i, stride)}, #{value}_i = #{imag(x, i, stride)}"
+end
+
+def store(value, x, i, stride = nil)
+	"#{real(x, i, stride)} = #{value}_r, #{imag(x, i, stride)} = #{value}_i"
+end
+
+def cadd(result, a, b)
+	"var #{result}_r = #{a}_r + #{b}_r, #{result}_i = #{a}_i + #{b}_i"
+end
+
+def csub(result, a, b)
+	"var #{result}_r = #{a}_r - #{b}_r, #{result}_i = #{a}_i - #{b}_i"
+end
+
+def cmul(result, a, b)
+	"var #{result}_r = #{a}_r * #{b}_r - #{a}_i * #{b}_i, #{result}_i = #{a}_r * #{b}_i + #{a}_i * #{b}_r"
+end
  %>var FFT = function () {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
-	
-	function factor(state) {
-		var n = state.n, p = 4, v = Math.floor(Math.sqrt(n)), buffer = state.factors
-		
-		while (n > 1) {
-			while (n % p) {
-				switch (p) {
-					case 4: p = 2; break
-					case 2: p = 3; break
-					default: p += 2; break
-				}
-				
-				if (p > v) {
-					p = n
-				}
-			}
-			
-			n /= p
-			
-			buffer.push(p)
-			buffer.push(n)
-		}
-		
-		return buffer
-	}
-	
-	var rsqrt2 = 1.0 / Math.sqrt(2)
 	
 	function butterfly2(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = <%= real('output', 'outputOffset + i') %> * rsqrt2
-			var v1_i = <%= imag('output', 'outputOffset + i') %> * rsqrt2
+			<%= load('s0', 'output', 'outputOffset + i') %>
+			<%= load('s1', 'output', 'outputOffset + i + m') %>
 			
-			var v2_r = <%= real('output', 'outputOffset + i + m') %> * rsqrt2
-			var v2_i = <%= imag('output', 'outputOffset + i + m') %> * rsqrt2
+			<%= load('t1', 't', 'i', 'fStride') %>
 			
-			var t_r = v2_r * <%= real('t', 'i', 'fStride') %> - v2_i * <%= imag('t', 'i', 'fStride') %>
-			var t_i = v2_r * <%= imag('t', 'i', 'fStride') %> + v2_i * <%= real('t', 'i', 'fStride') %>
+			<%= cmul('v1', 's1', 't1') %>
 			
-			<%= real('output', 'outputOffset + i') %> = v1_r + t_r
-			<%= imag('output', 'outputOffset + i') %> = v1_i + t_i
+			<%= cadd('r0', 's0', 'v1') %>
+			<%= csub('r1', 's0', 'v1') %>
 			
-			<%= real('output', 'outputOffset + i + m') %> = v1_r - t_r
-			<%= imag('output', 'outputOffset + i + m') %> = v1_i - t_i
+			<%= store('r0', 'output', 'outputOffset + i') %>
+			<%= store('r1', 'output', 'outputOffset + i + m') %>
 		}
 	}
-	
-	var rsqrt3 = 1.0 / Math.sqrt(3)
 	
 	function butterfly3(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
 		var m1 = m, m2 = 2 * m
 		var fStride1 = fStride, fStride2 = 2 * fStride
 		
-		var e1_i = <%= imag('t', 'm', 'fStride') %>
+		var e = <%= imag('t', 'm', 'fStride') %>
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = <%= real('output', 'outputOffset + i') %>      * rsqrt3
-			var v1_i = <%= imag('output', 'outputOffset + i') %>      * rsqrt3
+			<%= load('s0', 'output', 'outputOffset + i') %>
 			
-			var v2_r = <%= real('output', 'outputOffset + i + m1') %> * rsqrt3
-			var v2_i = <%= imag('output', 'outputOffset + i + m1') %> * rsqrt3
+			<%= load('s1', 'output', 'outputOffset + i + m1') %>
+			<%= load('t1', 't', 'i', 'fStride1') %>
+			<%= cmul('v1', 's1', 't1') %>
 			
-			var v3_r = <%= real('output', 'outputOffset + i + m2') %> * rsqrt3
-			var v3_i = <%= imag('output', 'outputOffset + i + m2') %> * rsqrt3
+			<%= load('s2', 'output', 'outputOffset + i + m2') %>
+			<%= load('t2', 't', 'i', 'fStride2') %>
+			<%= cmul('v2', 's2', 't2') %>
 			
-			var t1_r = v2_r * <%= real('t', 'i', 'fStride1') %> - v2_i * <%= imag('t', 'i', 'fStride1') %>
-			var t1_i = v2_r * <%= imag('t', 'i', 'fStride1') %> + v2_i * <%= real('t', 'i', 'fStride1') %>
+			<%= cadd('i0', 'v1', 'v2') %>
 			
-			var t2_r = v3_r * <%= real('t', 'i', 'fStride2') %> - v3_i * <%= imag('t', 'i', 'fStride2') %>
-			var t2_i = v3_r * <%= imag('t', 'i', 'fStride2') %> + v3_i * <%= real('t', 'i', 'fStride2') %>
+			<%= cadd('r0', 's0', 'i0') %>
+			<%= store('r0', 'output', 'outputOffset + i') %>
 			
-			var t3_r = t1_r + t2_r
-			var t3_i = t1_i + t2_i
+			var i1_r = s0_r - i0_r * 0.5
+			var i1_i = s0_i - i0_i * 0.5
 			
-			var t4_r = (t1_r - t2_r) * e1_i
-			var t4_i = (t1_i - t2_i) * e1_i
+			var i2_r = (v1_r - v2_r) * e
+			var i2_i = (v1_i - v2_i) * e
 			
-			v2_r = v1_r - t3_r / 2.0
-			v2_i = v1_i - t3_i / 2.0
+			var r1_r = i1_r - i2_i
+			var r1_i = i1_i + i2_r
+			<%= store('r1', 'output', 'outputOffset + i + m1') %>
 			
-			<%= real('output', 'outputOffset + i') %>      = v1_r + t3_r
-			<%= imag('output', 'outputOffset + i') %>      = v1_i + t3_i
-			
-			<%= real('output', 'outputOffset + i + m1') %> = v2_r - t4_i
-			<%= imag('output', 'outputOffset + i + m1') %> = v2_i + t4_r
-			
-			<%= real('output', 'outputOffset + i + m2') %> = v2_r + t4_i
-			<%= imag('output', 'outputOffset + i + m2') %> = v2_i - t4_r
+			var r2_r = i1_r + i2_i
+			var r2_i = i1_i - i2_r
+			<%= store('r2', 'output', 'outputOffset + i + m2') %>
 		}
 	}
-	
-	var rsqrt4 = 0.5
 	
 	function butterfly4(output, outputOffset, fStride, state, m) {
 		var t = state.twiddle
@@ -118,86 +101,78 @@ end
 		var fStride1 = fStride, fStride2 = 2 * fStride, fStride3 = 3 * fStride
 		
 		for (var i = 0; i < m; i++) {
-			var v1_r = <%= real('output', 'outputOffset + i') %>      * rsqrt4
-			var v1_i = <%= imag('output', 'outputOffset + i') %>      * rsqrt4
+			<%= load('s0', 'output', 'outputOffset + i') %>
 			
-			var v2_r = <%= real('output', 'outputOffset + i + m1') %> * rsqrt4
-			var v2_i = <%= imag('output', 'outputOffset + i + m1') %> * rsqrt4
+			<%= load('s1', 'output', 'outputOffset + i + m1') %>
+			<%= load('t1', 't', 'i', 'fStride1') %>
+			<%= cmul('v1', 's1', 't1') %>
 			
-			var v3_r = <%= real('output', 'outputOffset + i + m2') %> * rsqrt4
-			var v3_i = <%= imag('output', 'outputOffset + i + m2') %> * rsqrt4
+			<%= load('s2', 'output', 'outputOffset + i + m2') %>
+			<%= load('t2', 't', 'i', 'fStride2') %>
+			<%= cmul('v2', 's2', 't2') %>
 			
-			var v4_r = <%= real('output', 'outputOffset + i + m3') %> * rsqrt4
-			var v4_i = <%= imag('output', 'outputOffset + i + m3') %> * rsqrt4
+			<%= load('s3', 'output', 'outputOffset + i + m3') %>
+			<%= load('t3', 't', 'i', 'fStride3') %>
+			<%= cmul('v3', 's3', 't3') %>
 			
-			var t1_r = v2_r * <%= real('t', 'i', 'fStride1') %> - v2_i * <%= imag('t', 'i', 'fStride1') %>
-			var t1_i = v2_r * <%= imag('t', 'i', 'fStride1') %> + v2_i * <%= real('t', 'i', 'fStride1') %>
+			<%= cadd('i0', 's0', 'v2') %>
+			<%= csub('i1', 's0', 'v2') %>
+			<%= cadd('i2', 'v1', 'v3') %>
+			<%= csub('i3', 'v1', 'v3') %>
 			
-			var t2_r = v3_r * <%= real('t', 'i', 'fStride2') %> - v3_i * <%= imag('t', 'i', 'fStride2') %>
-			var t2_i = v3_r * <%= imag('t', 'i', 'fStride2') %> + v3_i * <%= real('t', 'i', 'fStride2') %>
-			
-			var t3_r = v4_r * <%= real('t', 'i', 'fStride3') %> - v4_i * <%= imag('t', 'i', 'fStride3') %>
-			var t3_i = v4_r * <%= imag('t', 'i', 'fStride3') %> + v4_i * <%= real('t', 'i', 'fStride3') %>
-			
-			var t4_r = v1_r - t2_r
-			var t4_i = v1_i - t2_i
-			
-			var t5_r = t1_r + t3_r
-			var t5_i = t1_i + t3_i
-			
-			var t6_r = t1_r - t3_r
-			var t6_i = t1_i - t3_i
-			
-			v1_r += t2_r
-			v1_i += t2_i
-			
-			<%= real('output', 'outputOffset + i') %>      = v1_r + t5_r
-			<%= imag('output', 'outputOffset + i') %>      = v1_i + t5_i
-			
-			<%= real('output', 'outputOffset + i + m2') %> = v1_r - t5_r
-			<%= imag('output', 'outputOffset + i + m2') %> = v1_i - t5_i
+			<%= cadd('r0', 'i0', 'i2') %>
 			
 			if (state.inverse) {
-				<%= real('output', 'outputOffset + i + m1') %> = t4_r - t6_i
-				<%= imag('output', 'outputOffset + i + m1') %> = t4_i + t6_r
-				
-				<%= real('output', 'outputOffset + i + m3') %> = t4_r + t6_i
-				<%= imag('output', 'outputOffset + i + m3') %> = t4_i - t6_r
+				var r1_r = i1_r - i3_i
+				var r1_i = i1_i + i3_r
 			} else {
-				<%= real('output', 'outputOffset + i + m1') %> = t4_r + t6_i
-				<%= imag('output', 'outputOffset + i + m1') %> = t4_i - t6_r
-				
-				<%= real('output', 'outputOffset + i + m3') %> = t4_r - t6_i
-				<%= imag('output', 'outputOffset + i + m3') %> = t4_i + t6_r
+				var r1_r = i1_r + i3_i
+				var r1_i = i1_i - i3_r
 			}
+			
+			<%= csub('r2', 'i0', 'i2') %>
+			
+			if (state.inverse) {
+				var r3_r = i1_r + i3_i
+				var r3_i = i1_i - i3_r
+			} else {
+				var r3_r = i1_r - i3_i
+				var r3_i = i1_i + i3_r
+			}
+			
+			<%= store('r0', 'output', 'outputOffset + i') %>
+			<%= store('r1', 'output', 'outputOffset + i + m1') %>
+			<%= store('r2', 'output', 'outputOffset + i + m2') %>
+			<%= store('r3', 'output', 'outputOffset + i + m3') %>
 		}
 	}
 	
 	function butterfly(output, outputOffset, fStride, state, m, p) {
 		var t = state.twiddle, n = state.n, scratch = new Float64Array(2 * p)
 		
-		var rsqrt = 1.0 / Math.sqrt(p)
-		
 		for (var u = 0; u < m; u++) {
 			for (var q1 = 0, k = u; q1 < p; q1++, k += m) {
-				<%= real('scratch', 'q1') %> = <%= real('output', 'outputOffset + k') %> * rsqrt
-				<%= imag('scratch', 'q1') %> = <%= imag('output', 'outputOffset + k') %> * rsqrt
+				<%= load('x0', 'output', 'outputOffset + k') %>
+				<%= store('x0', 'scratch', 'q1') %>
 			}
 			
 			for (var q1 = 0, k = u; q1 < p; q1++, k += m) {
 				var tOffset = 0
 				
-				<%= real('output', 'outputOffset + k') %> = <%= real('scratch', '0') %>
-				<%= imag('output', 'outputOffset + k') %> = <%= imag('scratch', '0') %>
+				<%= load('x0', 'scratch', '0') %>
+				<%= store('x0', 'output', 'outputOffset + k') %>
 				
 				for (var q = 1; q < p; q++) {
 					tOffset = (tOffset + fStride * k) % n
 					
-					var t_r = <%= real('scratch', 'q') %> * <%= real('t', 'tOffset') %> - <%= imag('scratch', 'q') %> * <%= imag('t', 'tOffset') %>
-					var t_i = <%= real('scratch', 'q') %> * <%= imag('t', 'tOffset') %> + <%= imag('scratch', 'q') %> * <%= real('t', 'tOffset') %>
+					<%= load('s0', 'output', 'outputOffset + k') %>
 					
-					<%= real('output', 'outputOffset + k') %> += t_r
-					<%= imag('output', 'outputOffset + k') %> += t_i
+					<%= load('s1', 'scratch', 'q') %>
+					<%= load('t1', 't', 'tOffset') %>
+					<%= cmul('v1', 's1', 't1') %>
+					
+					<%= cadd('r0', 's0', 'v1') %>
+					<%= store('r0', 'output', 'outputOffset + k') %>
 				}
 			}
 		}
@@ -209,8 +184,8 @@ end
 		
 		if (m == 1) {
 			for (var i = 0; i < p * m; i++) {
-				<%= real('output', 'outputOffset + i') %> = <%= real('f', 'fOffset + i * fStride * inputStride') %>
-				<%= imag('output', 'outputOffset + i') %> = <%= imag('f', 'fOffset + i * fStride * inputStride') %>
+				<%= load('x0', 'f', 'fOffset + i * fStride * inputStride') %>
+				<%= store('x0', 'output', 'outputOffset + i') %>
 			}
 		} else {
 			for (var i = 0; i < p; i++) {
@@ -242,37 +217,60 @@ end
 			scratch: new Float64Array(2 * n)
 		}
 		
-		var t = state.twiddle, pi2 = 2 * Math.PI
+		var t = state.twiddle, theta = 2 * Math.PI / n
 		
 		for (var i = 0; i < n; i++) {
 			if (inverse) {
-				var phase =  pi2 * i / n
+				var phase =  theta * i
 			} else {
-				var phase = -pi2 * i / n
+				var phase = -theta * i
 			}
 			
 			<%= real('t', 'i') %> = Math.cos(phase)
 			<%= imag('t', 'i') %> = Math.sin(phase)
 		}
 		
-		factor(state)
+		var p = 4, v = Math.floor(Math.sqrt(n))
+		
+		while (n > 1) {
+			while (n % p) {
+				switch (p) {
+					case 4: p = 2; break
+					case 2: p = 3; break
+					default: p += 2; break
+				}
+				
+				if (p > v) {
+					p = n
+				}
+			}
+			
+			n /= p
+			
+			state.factors.push(p)
+			state.factors.push(n)
+		}
 		
 		this.state = state
-		
-		return
 	}
 	
-	dft.prototype.process = function(output, input, stride) {
-		if (!stride) { stride = 1 }
+	dft.prototype.process = function(output, outputStride, input, inputStride) {
+		var outputStride = ~~outputStride, inputStride = ~~inputStride
+		
+		if (outputStride < 1) {
+			throw new RangeError("outputStride is outside range, should be positive integer, was `" + outputStride + "'")
+		}
+		
+		if (inputStride < 1) {
+			throw new RangeError("inputStride is outside range, should be positive integer, was `" + inputStride + "'")
+		}
 		
 		if (input == output) {
-			var temp = new Float64Array(2 * this.state.n)
-			
-			work(temp, 0, input, 0, 1, stride, this.state.factors.slice(), this.state)
+			work(this.scratch, 0, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
 			
 			output.set(temp)
 		} else {
-			work(output, 0, input, 0, 1, stride, this.state.factors.slice(), this.state)
+			work(output, 0, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
 		}
 	}
 	
