@@ -172,7 +172,7 @@ void function (namespace) {
 		}
 	}
 	
-	var dft = function (n, inverse) {
+	var complex = function (n, inverse) {
 		var n = ~~n, inverse = !!inverse
 		
 		if (n < 1) {
@@ -225,7 +225,7 @@ void function (namespace) {
 		this.state = state
 	}
 	
-	dft.prototype.process = function(output, outputStride, input, inputStride) {
+	complex.prototype.process = function(output, outputStride, input, inputStride) {
 		var outputStride = ~~outputStride, inputStride = ~~inputStride
 		
 		if (outputStride < 1) {
@@ -245,5 +245,5 @@ void function (namespace) {
 		}
 	}
 	
-	namespace.dft = dft
+	namespace.complex = complex
 }(FFT)
