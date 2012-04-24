@@ -1,14 +1,16 @@
-TARGETS := lib/fft.js lib/node-fft.js
+TARGETS := lib/complex.js lib/node.erb.js lib/node.js
 
 all: $(TARGETS)
-node: lib/node-fft.js
+node: lib/node.js
 
-lib/fft.js: src/fft.erb.js
+lib/complex.js: src/complex.erb.js
 	erb $^ > $@
 
-lib/node-fft.js: lib/fft.js
-	cp $^ $@
-	echo "module.exports=FFT;" >> $@
+lib/node.erb.js: src/node.erb.js
+	erb $^ > $@
+
+lib/node.js: lib/node.erb.js
+	erb $^ > $@
 
 clean:
 	rm -rf $(TARGETS)

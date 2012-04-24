@@ -1,5 +1,5 @@
 <%= File.read "#{File.dirname(__FILE__)}/../LICENSE" %>
-<% load "#{File.dirname(__FILE__)}/complex.rb" %>
+<% load "#{File.dirname(__FILE__)}/../src/complex.rb" %>
 
 if (!FFT) {
 	var FFT = {}
