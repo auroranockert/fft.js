@@ -7,7 +7,7 @@ No promises, but I tested it against Wolfram Alpha once, and it was reasonably a
 
 There are optimized kernels for prime factors, 2, 3, 4, so if you want high performance, use lengths that are a factor of those.
 
-Notice that the DFT is normalized so that `ifft(fft(x)) ~= x`
+Notice that the DFT is not normalized, so `ifft(fft(x)) / n ~= x`
 
 
 Usage
@@ -17,7 +17,7 @@ Usage
 
 /* Create a new FFT object */
 
-var fft = new FFT.FFT(n, inverse)
+var fft = new FFT.complex(n, inverse)
 
 fft.process(output, input) /* Output and input should be float arrays (of the right length) */
 
