@@ -1,26 +1,34 @@
 <%
-def real(x, i, stride = nil)
+def real(x, offset = 0, i = nil, stride = nil)
 	if stride
-		"#{x}[2 * (#{stride}) * (#{i})]"
+		"#{x}[2 * ((#{offset}) + (#{stride}) * (#{i}))]"
+	elsif i
+		"#{x}[2 * ((#{offset}) + (#{i}))]"
+	elsif offset
+		"#{x}[2 * (#{offset})]"
 	else
-		"#{x}[2 * (#{i})]"
+		"#{x}[0]"
 	end
 end
 
-def imag(x, i, stride = nil)
+def imag(x, offset = 0, i = nil, stride = nil)
 	if stride
-		"#{x}[2 * (#{stride}) * (#{i}) + 1]"
+		"#{x}[2 * ((#{offset}) + (#{stride}) * (#{i})) + 1]"
+	elsif i
+		"#{x}[2 * ((#{offset}) + (#{i})) + 1]"
+	elsif offset
+		"#{x}[2 * (#{offset}) + 1]"
 	else
-		"#{x}[2 * (#{i}) + 1]"
+		"#{x}[1]"
 	end
 end
 
-def load(value, x, i, stride = nil)
-	"var #{value}_r = #{real(x, i, stride)}, #{value}_i = #{imag(x, i, stride)}"
+def load(value, x, offset = 0, i = nil, stride = nil)
+	"var #{value}_r = #{real(x, offset, i, stride)}, #{value}_i = #{imag(x, offset, i, stride)}"
 end
 
-def store(value, x, i, stride = nil)
-	"#{real(x, i, stride)} = #{value}_r, #{imag(x, i, stride)} = #{value}_i"
+def store(value, x, offset = 0, i = nil, stride = nil)
+	"#{real(x, offset, i, stride)} = #{value}_r, #{imag(x, offset, i, stride)} = #{value}_i"
 end
 
 def cadd(result, a, b)
@@ -37,47 +45,47 @@ end
  %>var FFT = function () {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
 	
-	function butterfly2(output, outputOffset, fStride, state, m) {
+	function butterfly2(output, outputOffset, outputStride, fStride, state, m) {
 		var t = state.twiddle
 		
 		for (var i = 0; i < m; i++) {
-			<%= load('s0', 'output', 'outputOffset + i') %>
-			<%= load('s1', 'output', 'outputOffset + i + m') %>
+			<%= load('s0', 'output', 'outputOffset', 'i', 'outputStride') %>
+			<%= load('s1', 'output', 'outputOffset', 'i + m', 'outputStride') %>
 			
-			<%= load('t1', 't', 'i', 'fStride') %>
+			<%= load('t1', 't', 0, 'i', 'fStride') %>
 			
 			<%= cmul('v1', 's1', 't1') %>
 			
 			<%= cadd('r0', 's0', 'v1') %>
 			<%= csub('r1', 's0', 'v1') %>
 			
-			<%= store('r0', 'output', 'outputOffset + i') %>
-			<%= store('r1', 'output', 'outputOffset + i + m') %>
+			<%= store('r0', 'output', 'outputOffset', 'i', 'outputStride') %>
+			<%= store('r1', 'output', 'outputOffset', 'i + m', 'outputStride') %>
 		}
 	}
 	
-	function butterfly3(output, outputOffset, fStride, state, m) {
+	function butterfly3(output, outputOffset, outputStride, fStride, state, m) {
 		var t = state.twiddle
 		var m1 = m, m2 = 2 * m
 		var fStride1 = fStride, fStride2 = 2 * fStride
 		
-		var e = <%= imag('t', 'm', 'fStride') %>
+		var e = <%= imag('t', 0, 'm', 'fStride') %>
 		
 		for (var i = 0; i < m; i++) {
-			<%= load('s0', 'output', 'outputOffset + i') %>
+			<%= load('s0', 'output', 'outputOffset', 'i', 'outputStride') %>
 			
-			<%= load('s1', 'output', 'outputOffset + i + m1') %>
-			<%= load('t1', 't', 'i', 'fStride1') %>
+			<%= load('s1', 'output', 'outputOffset', 'i + m1', 'outputStride') %>
+			<%= load('t1', 't', 0, 'i', 'fStride1') %>
 			<%= cmul('v1', 's1', 't1') %>
 			
-			<%= load('s2', 'output', 'outputOffset + i + m2') %>
-			<%= load('t2', 't', 'i', 'fStride2') %>
+			<%= load('s2', 'output', 'outputOffset', 'i + m2', 'outputStride') %>
+			<%= load('t2', 't', 0, 'i', 'fStride2') %>
 			<%= cmul('v2', 's2', 't2') %>
 			
 			<%= cadd('i0', 'v1', 'v2') %>
 			
 			<%= cadd('r0', 's0', 'i0') %>
-			<%= store('r0', 'output', 'outputOffset + i') %>
+			<%= store('r0', 'output', 'outputOffset', 'i', 'outputStride') %>
 			
 			var i1_r = s0_r - i0_r * 0.5
 			var i1_i = s0_i - i0_i * 0.5
@@ -87,32 +95,32 @@ end
 			
 			var r1_r = i1_r - i2_i
 			var r1_i = i1_i + i2_r
-			<%= store('r1', 'output', 'outputOffset + i + m1') %>
+			<%= store('r1', 'output', 'outputOffset', 'i + m1', 'outputStride') %>
 			
 			var r2_r = i1_r + i2_i
 			var r2_i = i1_i - i2_r
-			<%= store('r2', 'output', 'outputOffset + i + m2') %>
+			<%= store('r2', 'output', 'outputOffset', 'i + m2', 'outputStride') %>
 		}
 	}
 	
-	function butterfly4(output, outputOffset, fStride, state, m) {
+	function butterfly4(output, outputOffset, outputStride, fStride, state, m) {
 		var t = state.twiddle
 		var m1 = m, m2 = 2 * m, m3 = 3 * m
 		var fStride1 = fStride, fStride2 = 2 * fStride, fStride3 = 3 * fStride
 		
 		for (var i = 0; i < m; i++) {
-			<%= load('s0', 'output', 'outputOffset + i') %>
+			<%= load('s0', 'output', 'outputOffset', 'i', 'outputStride') %>
 			
-			<%= load('s1', 'output', 'outputOffset + i + m1') %>
-			<%= load('t1', 't', 'i', 'fStride1') %>
+			<%= load('s1', 'output', 'outputOffset', 'i + m1', 'outputStride') %>
+			<%= load('t1', 't', 0, 'i', 'fStride1') %>
 			<%= cmul('v1', 's1', 't1') %>
 			
-			<%= load('s2', 'output', 'outputOffset + i + m2') %>
-			<%= load('t2', 't', 'i', 'fStride2') %>
+			<%= load('s2', 'output', 'outputOffset', 'i + m2', 'outputStride') %>
+			<%= load('t2', 't', 0, 'i', 'fStride2') %>
 			<%= cmul('v2', 's2', 't2') %>
 			
-			<%= load('s3', 'output', 'outputOffset + i + m3') %>
-			<%= load('t3', 't', 'i', 'fStride3') %>
+			<%= load('s3', 'output', 'outputOffset', 'i + m3', 'outputStride') %>
+			<%= load('t3', 't', 0, 'i', 'fStride3') %>
 			<%= cmul('v3', 's3', 't3') %>
 			
 			<%= cadd('i0', 's0', 'v2') %>
@@ -140,64 +148,64 @@ end
 				var r3_i = i1_i + i3_r
 			}
 			
-			<%= store('r0', 'output', 'outputOffset + i') %>
-			<%= store('r1', 'output', 'outputOffset + i + m1') %>
-			<%= store('r2', 'output', 'outputOffset + i + m2') %>
-			<%= store('r3', 'output', 'outputOffset + i + m3') %>
+			<%= store('r0', 'output', 'outputOffset', 'i', 'outputStride') %>
+			<%= store('r1', 'output', 'outputOffset', 'i + m1', 'outputStride') %>
+			<%= store('r2', 'output', 'outputOffset', 'i + m2', 'outputStride') %>
+			<%= store('r3', 'output', 'outputOffset', 'i + m3', 'outputStride') %>
 		}
 	}
 	
-	function butterfly(output, outputOffset, fStride, state, m, p) {
+	function butterfly(output, outputOffset, outputStride, fStride, state, m, p) {
 		var t = state.twiddle, n = state.n, scratch = new Float64Array(2 * p)
 		
 		for (var u = 0; u < m; u++) {
 			for (var q1 = 0, k = u; q1 < p; q1++, k += m) {
-				<%= load('x0', 'output', 'outputOffset + k') %>
+				<%= load('x0', 'output', 'outputOffset', 'k', 'outputStride') %>
 				<%= store('x0', 'scratch', 'q1') %>
 			}
 			
 			for (var q1 = 0, k = u; q1 < p; q1++, k += m) {
 				var tOffset = 0
 				
-				<%= load('x0', 'scratch', '0') %>
-				<%= store('x0', 'output', 'outputOffset + k') %>
+				<%= load('x0', 'scratch', 0) %>
+				<%= store('x0', 'output', 'outputOffset', 'k', 'outputStride') %>
 				
 				for (var q = 1; q < p; q++) {
 					tOffset = (tOffset + fStride * k) % n
 					
-					<%= load('s0', 'output', 'outputOffset + k') %>
+					<%= load('s0', 'output', 'outputOffset', 'k', 'outputStride') %>
 					
 					<%= load('s1', 'scratch', 'q') %>
 					<%= load('t1', 't', 'tOffset') %>
 					<%= cmul('v1', 's1', 't1') %>
 					
 					<%= cadd('r0', 's0', 'v1') %>
-					<%= store('r0', 'output', 'outputOffset + k') %>
+					<%= store('r0', 'output', 'outputOffset', 'k', 'outputStride') %>
 				}
 			}
 		}
 	}
 	
-	function work(output, outputOffset, f, fOffset, fStride, inputStride, factors, state) {
+	function work(output, outputOffset, outputStride, f, fOffset, fStride, inputStride, factors, state) {
 		var p = factors.shift()
 		var m = factors.shift()
 		
 		if (m == 1) {
 			for (var i = 0; i < p * m; i++) {
-				<%= load('x0', 'f', 'fOffset + i * fStride * inputStride') %>
-				<%= store('x0', 'output', 'outputOffset + i') %>
+				<%= load('x0', 'f', 'fOffset', 'i', 'fStride * inputStride') %>
+				<%= store('x0', 'output', 'outputOffset', 'i', 'outputStride') %>
 			}
 		} else {
 			for (var i = 0; i < p; i++) {
-				work(output, outputOffset + i * m, f, fOffset + i * fStride * inputStride, fStride * p, inputStride, factors.slice(), state)
+				work(output, outputOffset + outputStride * i * m, outputStride, f, fOffset + i * fStride * inputStride, fStride * p, inputStride, factors.slice(), state)
 			}
 		}
 		
 		switch (p) {
-			case 2: butterfly2(output, outputOffset, fStride, state, m); break
-			case 3: butterfly3(output, outputOffset, fStride, state, m); break
-			case 4: butterfly4(output, outputOffset, fStride, state, m); break
-			default: butterfly(output, outputOffset, fStride, state, m, p); break
+			case 2: butterfly2(output, outputOffset, outputStride, fStride, state, m); break
+			case 3: butterfly3(output, outputOffset, outputStride, fStride, state, m); break
+			case 4: butterfly4(output, outputOffset, outputStride, fStride, state, m); break
+			default: butterfly(output, outputOffset, outputStride, fStride, state, m, p); break
 		}
 	}
 	
@@ -266,11 +274,11 @@ end
 		}
 		
 		if (input == output) {
-			work(this.scratch, 0, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+			work(this.scratch, 0, outputStride, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
 			
 			output.set(temp)
 		} else {
-			work(output, 0, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+			work(output, 0, outputStride, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
 		}
 	}
 	
