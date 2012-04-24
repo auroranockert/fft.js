@@ -1,6 +1,11 @@
 <%= File.read "#{File.dirname(__FILE__)}/../LICENSE" %>
 <% load "#{File.dirname(__FILE__)}/complex.rb" %>
-var FFT = function () {
+
+if (!FFT) {
+	var FFT = {}
+}
+
+void function (namespace) {
 	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
 	
 	function butterfly2(output, outputOffset, outputStride, fStride, state, m) {
@@ -240,7 +245,5 @@ var FFT = function () {
 		}
 	}
 	
-	return {
-		dft: dft
-	}
-}()
+	namespace.dft = dft
+}(FFT)
