@@ -6,12 +6,12 @@
 	<script src='lib/complex.js'></script>
 	<script>
 	
-	function kahanDiff(x, xStride, y, yStride, n, run) {
+	function kahanDiff(x, xOffset, xStride, y, yOffset, yStride, n, run) {
 		var sum = 0.0, compensation = 0.0
 		
 		for (var i = 0; i < x.length / run / xStride; i++) {
 			for (var j = 0; j < run; j++) {
-				var v = Math.abs(x[run * xStride * i + j] - y[run * yStride * i + j] / n) - compensation
+				var v = Math.abs(x[xOffset + run * xStride * i + j] - y[yOffset + run * yStride * i + j] / n) - compensation
 			
 				var t = sum + v
 			
@@ -28,12 +28,12 @@
 		return sum
 	}
 	
-	function kahanStrideDiff(x, xStride, run) {
+	function kahanStrideDiff(x, xOffset, xStride, run) {
 		var sum = 0.0, compensation = 0.0
 		
 		for (var i = 0; i < x.length / run / xStride; i++) {
 			for (var j = run; j < run * xStride; j++) {
-				var v = Math.abs(x[run * xStride * i + j]) - compensation
+				var v = Math.abs(x[xOffset + run * xStride * i + j]) - compensation
 			
 				var t = sum + v
 			
@@ -44,6 +44,26 @@
 				if (isNaN(sum)) {
 					debugger
 				}
+			}
+		}
+		
+		return sum
+	}
+	
+	function kahanOffsetDiff(x, xOffset) {
+		var sum = 0.0, compensation = 0.0
+		
+		for (var i = 0; i < xOffset; i++) {
+			var v = Math.abs(x[i]) - compensation
+			
+			var t = sum + v
+			
+			compensation = (t - sum) - v
+			
+			sum = t
+				
+			if (isNaN(sum)) {
+				debugger
 			}
 		}
 		
@@ -58,10 +78,10 @@
 			i[j] = Math.random()
 		}
 		
-		fft.process(o1, 1, i, 1)
-		ifft.process(o2, 1, o1, 1)
+		fft.process(o1, 0, 1, i, 0,  1)
+		ifft.process(o2, 0, 1, o1, 0, 1)
 		
-		return kahanDiff(i, 1, o2, 1, n, 2)
+		return kahanDiff(i, 0, 1, o2, 0, 1, n, 2)
 	}
 	
 	function testComplexStride(n) {
@@ -75,10 +95,10 @@
 			i[2 * j * iStride + 1] = Math.random()
 		}
 		
-		fft.process(o1, o1Stride, i, iStride)
-		ifft.process(o2, o2Stride, o1, o1Stride)
+		fft.process(o1, 0, o1Stride, i, 0, iStride)
+		ifft.process(o2, 0, o2Stride, o1, 0, o1Stride)
 		
-		return [kahanDiff(i, iStride, o2, o2Stride, n, 2), kahanStrideDiff(o2, o2Stride, 2)]
+		return [kahanDiff(i, 0, iStride, o2, 0, o2Stride, n, 2), kahanStrideDiff(o2, 0, o2Stride, 2)]
 	}
 	
 	function testRealToComplex(n) {
@@ -89,31 +109,55 @@
 			i[j] = Math.random()
 		}
 		
-		fft.process(o1, 1, i, 1, 'real')
-		ifft.process(o2, 1, o1, 1)
+		fft.process(o1, 0, 1, i, 0, 1, 'real')
+		ifft.process(o2, 0, 1, o1, 0, 1)
 		
-		return [kahanDiff(i, 1, o2, 2, n, 1), kahanStrideDiff(o2, 2, 1)]
+		return [kahanDiff(i, 0, 1, o2, 0, 2, n, 1), kahanStrideDiff(o2, 2, 1)]
 	}
 	
+	function testRealToComplexWithOffset(n) {
+		var iOffset = ~~(12 * Math.random()), o1Offset = ~~(12 * Math.random()), o2Offset = ~~(12 * Math.random())
+		
+		var i = new Float64Array(iOffset + n), o1 = new Float64Array(o1Offset + 2 * n), o2 = new Float64Array(o2Offset + 2 * n)
+		var fft = new FFT.complex(n, false), ifft = new FFT.complex(n, true)
+		
+		for (var j = 0; j < n; j++) {
+			i[iOffset + j] = Math.random()
+		}
+		
+		fft.process(o1, o1Offset, 1, i, iOffset, 1, 'real')
+		ifft.process(o2, o2Offset, 1, o1, o1Offset, 1)
+		
+		return [kahanDiff(i, 1, o2, 2, n, 1), kahanStrideDiff(o2, 2, 1), kahanOffsetDiff(o1, o1Offset), kahanOffsetDiff(o2, o2Offset)]
+	}
+	
+	
 	var count = 0
-	for (var i = 2; i < 50; i++) {
+	for (var i = 2; i < 100; i++) {
 		var v = testComplex(i)
 		if (isNaN(v) || v > 1e-12) {
 			console.log('Complex', i, v), count++
 		}
 	}
 	
-	for (var i = 2; i < 50; i++) {
+	for (var i = 2; i < 100; i++) {
 		var v = testComplexStride(i)
 		if (isNaN(v[0]) || v[0] > 1e-12 || v[1] > 0) {
 			console.log('Complex Strided', i, v), count++
 		}
 	}
 	
-	for (var i = 2; i < 50; i++) {
+	for (var i = 2; i < 100; i++) {
 		var v = testRealToComplex(i)
 		if (isNaN(v[0]) || isNaN(v[1]) || v[0] > 1e-12 || v[1] > 1e-12) {
 			console.log('Real to Complex', i, v), count++
+		}
+	}
+	
+	for (var i = 2; i < 100; i++) {
+		var v = testRealToComplexWithOffset(i)
+		if (isNaN(v[0]) || isNaN(v[1]) || isNaN(v[2]) || isNaN(v[3]) || v[0] > 1e-12 || v[1] > 1e-12 || v[2] > 0 || v[3] > 0) {
+			console.log('Real to Complex Offset', i, v), count++
 		}
 	}
 	

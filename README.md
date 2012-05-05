@@ -19,7 +19,11 @@ Usage
 
 var fft = new FFT.complex(n, inverse)
 
-fft.process(output, outputStride, input, inputStride, type) /* Output and input should be float arrays (of the right length), type is either 'complex' (default) or 'real' */
+/* Output and input should be float arrays (of the right length), type is either 'complex' (default) or 'real' */
+fft.process(output, outputOffset, outputStride, input, inputOffset, inputStride, type)
+
+/* Or the simplified interface, which just sets the offsets to 0, and the strides to 1 */
+fft.simple(output, input, type)
 
 ```
 

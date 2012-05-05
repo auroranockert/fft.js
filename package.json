@@ -1,7 +1,7 @@
 {
 	"name":		"fft",
 	"authors":	["Jens Nockert", "Jussi Kalliokoski"],
-	"version":	"0.2.0",
+	"version":	"0.2.1",
 	"description":	"A Fast Fourier Transform library for JS.",
 	"repository":	{
 		"type":		"git",
