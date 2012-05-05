@@ -109,8 +109,8 @@
 			i[j] = Math.random()
 		}
 		
-		fft.process(o1, 0, 1, i, 0, 1, 'real')
-		ifft.process(o2, 0, 1, o1, 0, 1)
+		fft.simple(o1, i, 'real')
+		ifft.simple(o2, o1)
 		
 		return [kahanDiff(i, 0, 1, o2, 0, 2, n, 1), kahanStrideDiff(o2, 2, 1)]
 	}
