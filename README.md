@@ -19,7 +19,7 @@ Usage
 
 var fft = new FFT.complex(n, inverse)
 
-fft.process(output, input) /* Output and input should be float arrays (of the right length) */
+fft.process(output, outputStride, input, inputStride, type) /* Output and input should be float arrays (of the right length), type is either 'complex' (default) or 'real' */
 
 ```
 
