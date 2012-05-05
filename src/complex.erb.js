@@ -172,6 +172,10 @@ void function (namespace) {
 	}
 	
 	var complex = function (n, inverse) {
+		if (arguments.length < 2) {
+			throw new RangeError("You didn't pass enough arguments, passed `" + arguments.length + "'")
+		}
+		
 		var n = ~~n, inverse = !!inverse
 		
 		if (n < 1) {
