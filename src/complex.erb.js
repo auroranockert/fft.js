@@ -1,12 +1,11 @@
-<%= File.read "#{File.dirname(__FILE__)}/../LICENSE" %>
-<% load "#{File.dirname(__FILE__)}/../src/complex.rb" %>
+<%= $:.unshift('.'); require "#{File.dirname(__FILE__)}/../src/complex.rb"; File.read "#{File.dirname(__FILE__)}/../LICENSE" %>
 
 if (!FFT) {
 	var FFT = {}
 }
 
 void function (namespace) {
-	"use strict"; /* Notice that this semicolon actually is required, I may need this comment to remember that. */
+	"use strict"
 	
 	function butterfly2(output, outputOffset, outputStride, fStride, state, m) {
 		var t = state.twiddle
@@ -225,8 +224,10 @@ void function (namespace) {
 		this.state = state
 	}
 	
-	complex.prototype.process = function(output, outputStride, input, inputStride) {
+	complex.prototype.process = function(output, outputStride, input, inputStride, t) {
 		var outputStride = ~~outputStride, inputStride = ~~inputStride
+		
+		var type = t == 'real' ? t : 'complex'
 		
 		if (outputStride < 1) {
 			throw new RangeError("outputStride is outside range, should be positive integer, was `" + outputStride + "'")
@@ -236,12 +237,27 @@ void function (namespace) {
 			throw new RangeError("inputStride is outside range, should be positive integer, was `" + inputStride + "'")
 		}
 		
-		if (input == output) {
-			work(this.scratch, 0, outputStride, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+		if (type == 'real') {
+			for (var i = 0; i < this.state.n; i++) {
+				var x0_r = input[inputStride * i]
+				var x0_i = 0.0
+				
+				<%= store('x0', 'this.state.scratch', 'i') %>
+			}
 			
-			output.set(temp)
+			work(output, 0, outputStride, this.state.scratch, 0, 1, 1, this.state.factors.slice(), this.state)
 		} else {
-			work(output, 0, outputStride, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+			if (input == output) {
+				work(this.state.scratch, 0, 1, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+				
+				for (var i = 0; i < this.state.n; i++) {
+					<%= load('x0', 'this.state.scratch', 'i') %>
+					
+					<%= store('x0', 'output', 0, 'i', 'outputStride') %>
+				}
+			} else {
+				work(output, 0, outputStride, input, 0, 1, inputStride, this.state.factors.slice(), this.state)
+			}
 		}
 	}
 	
