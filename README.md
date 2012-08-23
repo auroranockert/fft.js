@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/JensNockert/fft.js.png)](http://travis-ci.org/JensNockert/fft.js)
 fft.js
 ================================================================================
 
