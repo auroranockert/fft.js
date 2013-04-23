@@ -161,6 +161,11 @@
 		}
 	}
 	
+	var f0 = new Float64Array(32), r0 = new Float64Array(64), fft = new FFT.complex(32, false); f0[0] = 1, f0[31] = 1
+	fft.simple(r0, f0, 'real')
+	
+	console.log(r0)
+	
 	console.log("Failcount", count)
 	</script>
 </head>
